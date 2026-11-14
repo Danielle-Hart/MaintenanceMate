@@ -15,11 +15,12 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
-        throws Exception {
+            throws Exception {
 
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/manager/**").hasAnyRole("ADMIN", "MANAGER")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
@@ -42,6 +43,14 @@ public class SecurityConfig {
                 User.withUsername("admin")
                         .password(passwordEncoder.encode("ChangeMe123!"))
                         .roles("ADMIN")
+                        .build(),
+                User.withUsername("manager")
+                        .password(passwordEncoder.encode("ChangeMe123!"))
+                        .roles("MANAGER")
+                        .build(),
+                User.withUsername("resident")
+                        .password(passwordEncoder.encode("ChangeMe123!"))
+                        .roles("RESIDENT")
                         .build()
         );
     }
