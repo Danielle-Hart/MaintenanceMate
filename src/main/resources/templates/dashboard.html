@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -37,9 +38,9 @@
                 <div class="card-body">
                     <h5>Maintenance Requests</h5>
                     <p>View, Create, and Manage Maintenance Requests</p>
-                    <button class="btn btn-primary" disabled>
-                        Coming Soon
-                    </button>
+                    <a th:href="@{/requests}" class="btn btn-primary">
+                        View Maintenance Requests
+                    </a>
                 </div>
             </div>
         </div>
@@ -55,10 +56,9 @@
                 </div>
             </div>
         </div>
+
     </div>
 </div>
-</body>
-<body>
 
 </body>
 </html>
