@@ -14,9 +14,14 @@
 
             <div class="mb-3">
                 <label class="form-label" for="title">Title</label>
-                <input id="title" type="text" th:field="*{title}" class="form-control"
+                <input id="title" type="text" th:field="*{title}" maxlength="150"  oninput="document.getElementById('titleCount').textContent = this.value.length"
+                       class="form-control"
                        th:classappend="${#fields.hasErrors('title')} ? 'is-invalid'">
                 <div class="invalid-feedback" th:errors="*{title}"></div>
+                <div class="form-text">
+                    <span id="titleCount">0</span> / 150 characters
+                </div>
+
             </div>
 
             <div class="mb-3">
