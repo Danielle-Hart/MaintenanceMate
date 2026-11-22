@@ -50,6 +50,11 @@ public class AnnouncementController {
 
     @PostMapping("/manager/announcements/{id}/delete")
     public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+            if (!announcementRepository.existsById(id)) {
+                redirectAttributes.addFlashAttribute(
+                        "error", "Announcement not found. This announcement may have already been deleted by another user. Please refresh the page to see the latest announcements");
+                return "redirect:/announcements";
+            }
         announcementRepository.deleteById(id);
         redirectAttributes.addFlashAttribute("success", "Announcement deleted.");
         return "redirect:/announcements";
