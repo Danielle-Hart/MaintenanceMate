@@ -41,15 +41,15 @@ public class SecurityConfig {
 
         return new InMemoryUserDetailsManager(
                 User.withUsername("admin")
-                        .password(passwordEncoder.encode("ChangeMe123!"))
+                        .password(passwordEncoder.encode(System.getenv("MAINTENANCEMATE_ADMIN_PASSWORD")))
                         .roles("ADMIN")
                         .build(),
                 User.withUsername("manager")
-                        .password(passwordEncoder.encode("ChangeMe123!"))
+                        .password(passwordEncoder.encode(System.getenv("MAINTENANCEMATE_MANAGER_PASSWORD")))
                         .roles("MANAGER")
                         .build(),
                 User.withUsername("resident")
-                        .password(passwordEncoder.encode("ChangeMe123!"))
+                        .password(passwordEncoder.encode(System.getenv("MAINTENANCEMATE_RESIDENT_PASSWORD")))
                         .roles("RESIDENT")
                         .build()
         );
