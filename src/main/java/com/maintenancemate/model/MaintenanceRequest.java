@@ -26,7 +26,9 @@ public class MaintenanceRequest {
     @NotBlank(message = "Apartment number is required")
     private String apartmentNumber;
 
-    private String status = "OPEN";
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private RequestStatus status = RequestStatus.OPEN;
 
     private String submittedBy;
 
@@ -69,11 +71,11 @@ public class MaintenanceRequest {
         this.apartmentNumber = apartmentNumber;
     }
 
-    public String getStatus() {
+    public RequestStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(RequestStatus status) {
         this.status = status;
     }
 

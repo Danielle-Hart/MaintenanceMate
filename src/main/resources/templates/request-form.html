@@ -91,6 +91,19 @@
                     </div>
                 </div>
 
+                <div class="mb-3" th:if="${editing and isManager}">
+                    <label for="status" class="form-label">
+                        Status
+                    </label>
+                    <select id="status"
+                            th:field="*{status}"
+                            class="form-select">
+                        <option th:each="s : ${statuses}"
+                                th:value="${s}"
+                                th:text="${s.label}">Open</option>
+                    </select>
+                </div>
+
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary"
                             th:text="${editing} ? 'Save Changes' : 'Submit Request'">

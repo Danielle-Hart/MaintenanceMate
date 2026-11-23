@@ -2,6 +2,7 @@
 package com.maintenancemate.controller;
 
 import com.maintenancemate.model.MaintenanceRequest;
+import com.maintenancemate.model.RequestStatus;
 import com.maintenancemate.repository.MaintenanceRequestRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -48,6 +49,12 @@ public class MaintenanceRequestController {
         return request;
     }
 
+    // Makes the list of statuses available to every view this controller renders
+    @ModelAttribute("statuses")
+    public RequestStatus[] statuses() {
+        return RequestStatus.values();
+    }
+
     // READ: Show requests
     @GetMapping
     public String listRequests(Model model, Authentication auth) {
@@ -89,7 +96,7 @@ public class MaintenanceRequestController {
 
         request.setId(null);
         request.setSubmittedBy(auth.getName());
-        request.setStatus("OPEN");
+        request.setStatus(RequestStatus.OPEN);
 
         repository.save(request);
 
@@ -111,6 +118,7 @@ public class MaintenanceRequestController {
 
         model.addAttribute("request", request);
         model.addAttribute("editing", true);
+        model.addAttribute("isManager", isManager(auth));
         return "request-form";
     }
 
@@ -130,12 +138,19 @@ public class MaintenanceRequestController {
         if (result.hasErrors()) {
             form.setId(id);
             model.addAttribute("editing", true);
+            model.addAttribute("isManager", isManager(auth));
             return "request-form";
         }
 
         existing.setTitle(form.getTitle());
         existing.setDescription(form.getDescription());
         existing.setApartmentNumber(form.getApartmentNumber());
+
+        // Only managers/admins may move a request through its lifecycle.
+        // A status value posted by a resident is ignored.
+        if (isManager(auth) && form.getStatus() != null) {
+            existing.setStatus(form.getStatus());
+        }
 
         repository.save(existing);
 

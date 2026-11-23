@@ -54,8 +54,9 @@
 
             <div class="d-flex justify-content-between">
                 <h5 th:text="${request.title}">Request Title</h5>
-                <span class="badge bg-secondary"
-                      th:text="${request.status}">OPEN</span>
+                <span class="badge"
+                      th:classappend="${request.status?.badgeClass}"
+                      th:text="${request.status?.label}">Open</span>
             </div>
 
             <p class="text-muted mb-2">
