@@ -2,27 +2,25 @@
 package com.maintenancemate.controller;
 
 import com.maintenancemate.model.MaintenanceRequest;
-import com.maintenancemate.repository.MaintenanceRequestRepository;
+import com.maintenancemate.model.RequestStatus;
+import com.maintenancemate.service.MaintenanceRequestService;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/requests")
 public class MaintenanceRequestController {
 
-    private final MaintenanceRequestRepository repository;
+    private final MaintenanceRequestService service;
 
-    public MaintenanceRequestController(
-            MaintenanceRequestRepository repository) {
-        this.repository = repository;
+    public MaintenanceRequestController(MaintenanceRequestService service) {
+        this.service = service;
     }
 
     private boolean isManager(Authentication auth) {
@@ -32,36 +30,19 @@ public class MaintenanceRequestController {
                         || role.equals("ROLE_ADMIN"));
     }
 
-    private MaintenanceRequest findAuthorizedRequest(
-            Long id, Authentication auth) {
-
-        MaintenanceRequest request = repository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Request not found"));
-
-        if (!isManager(auth)
-                && !auth.getName().equals(request.getSubmittedBy())) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN, "Access denied");
-        }
-
-        return request;
+    // Makes the list of statuses available to every view this controller renders
+    @ModelAttribute("statuses")
+    public RequestStatus[] statuses() {
+        return RequestStatus.values();
     }
 
     // READ: Show requests
     @GetMapping
     public String listRequests(Model model, Authentication auth) {
-
-        if (isManager(auth)) {
-            model.addAttribute("requests",
-                    repository.findAllByOrderByCreatedAtDesc());
-        } else {
-            model.addAttribute("requests",
-                    repository.findBySubmittedByOrderByCreatedAtDesc(
-                            auth.getName()));
-        }
-
-        model.addAttribute("isManager", isManager(auth));
+        boolean manager = isManager(auth);
+        model.addAttribute("requests",
+                service.findVisibleRequests(auth.getName(), manager));
+        model.addAttribute("isManager", manager);
         return "requests";
     }
 
@@ -87,15 +68,10 @@ public class MaintenanceRequestController {
             return "request-form";
         }
 
-        request.setId(null);
-        request.setSubmittedBy(auth.getName());
-        request.setStatus("OPEN");
-
-        repository.save(request);
+        service.create(request, auth.getName());
 
         redirectAttributes.addFlashAttribute(
                 "success", "Maintenance request submitted!");
-
         return "redirect:/requests";
     }
 
@@ -106,11 +82,11 @@ public class MaintenanceRequestController {
             Authentication auth,
             Model model) {
 
-        MaintenanceRequest request =
-                findAuthorizedRequest(id, auth);
-
-        model.addAttribute("request", request);
+        boolean manager = isManager(auth);
+        model.addAttribute("request",
+                service.findAuthorized(id, auth.getName(), manager));
         model.addAttribute("editing", true);
+        model.addAttribute("isManager", manager);
         return "request-form";
     }
 
@@ -124,24 +100,22 @@ public class MaintenanceRequestController {
             Model model,
             RedirectAttributes redirectAttributes) {
 
-        MaintenanceRequest existing =
-                findAuthorizedRequest(id, auth);
+        boolean manager = isManager(auth);
 
         if (result.hasErrors()) {
+            // Check ownership before echoing the form back, so a resident
+            // can't probe other people's request ids with invalid input.
+            service.findAuthorized(id, auth.getName(), manager);
             form.setId(id);
             model.addAttribute("editing", true);
+            model.addAttribute("isManager", manager);
             return "request-form";
         }
 
-        existing.setTitle(form.getTitle());
-        existing.setDescription(form.getDescription());
-        existing.setApartmentNumber(form.getApartmentNumber());
-
-        repository.save(existing);
+        service.update(id, form, auth.getName(), manager);
 
         redirectAttributes.addFlashAttribute(
                 "success", "Maintenance request updated!");
-
         return "redirect:/requests";
     }
 
@@ -152,14 +126,10 @@ public class MaintenanceRequestController {
             Authentication auth,
             RedirectAttributes redirectAttributes) {
 
-        MaintenanceRequest request =
-                findAuthorizedRequest(id, auth);
-
-        repository.delete(request);
+        service.delete(id, auth.getName(), isManager(auth));
 
         redirectAttributes.addFlashAttribute(
                 "success", "Maintenance request deleted!");
-
         return "redirect:/requests";
     }
 }
