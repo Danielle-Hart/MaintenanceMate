@@ -27,9 +27,9 @@ public class MaintenanceRequestController {
 
     private boolean isManager(Authentication auth) {
         return auth.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(role -> role.equals("ROLE_MANAGER")
-                        || role.equals("ROLE_ADMIN"));
+                .anyMatch(authority ->
+                        "ROLE_MANAGER".equals(authority.getAuthority())
+                                || "ROLE_ADMIN".equals(authority.getAuthority()));
     }
 
     private MaintenanceRequest findAuthorizedRequest(
@@ -39,8 +39,10 @@ public class MaintenanceRequestController {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Request not found"));
 
-        if (!isManager(auth)
-                && !auth.getName().equals(request.getSubmittedBy())) {
+        boolean manager = isManager(auth);
+        boolean owner = auth.getName().equals(request.getSubmittedBy());
+
+        if (!manager && !owner) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN, "Access denied");
         }
@@ -52,7 +54,9 @@ public class MaintenanceRequestController {
     @GetMapping
     public String listRequests(Model model, Authentication auth) {
 
-        if (isManager(auth)) {
+        boolean manager = isManager(auth);
+
+        if (manager) {
             model.addAttribute("requests",
                     repository.findAllByOrderByCreatedAtDesc());
         } else {
@@ -61,7 +65,7 @@ public class MaintenanceRequestController {
                             auth.getName()));
         }
 
-        model.addAttribute("isManager", isManager(auth));
+        model.addAttribute("isManager", manager);
         return "requests";
     }
 
